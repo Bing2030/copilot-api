@@ -56,6 +56,7 @@ import {
 } from "~/lib/token-usage"
 import { isResponsesStream, parseUserIdMetadata } from "~/lib/utils"
 import { setPluginRequestModel } from "~/lib/request-events"
+import { recordMessagesRequestedThinkingEffort } from "~/lib/upstream-model-log"
 import {
   translateToAnthropic,
   translateToOpenAI,
@@ -122,6 +123,7 @@ export async function handleProviderMessages(
   const provider = c.req.param("provider")
   const payload = await c.req.json<AnthropicMessagesPayload>()
   setPluginRequestModel(payload.model)
+  recordMessagesRequestedThinkingEffort(payload)
   payload.model = fromClaudeDiscoveryModelId(payload.model)
   applyClaudeNoToolsEffort(payload, c.req.header("user-agent"))
 
@@ -677,10 +679,7 @@ const createOpenAICompatiblePayload = (
 
   applyMiMoThinking(openAIPayload, payload)
 
-  applyDashScopePreserveThinkingDefault(
-    openAIPayload as unknown as Record<string, unknown>,
-    providerConfig,
-  )
+  applyDashScopePreserveThinkingDefault(openAIPayload, providerConfig)
 
   if (!Object.hasOwn(openAIPayload, "parallel_tool_calls")) {
     openAIPayload.parallel_tool_calls = true

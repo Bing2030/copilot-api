@@ -4,6 +4,7 @@ import type { Model } from "~/lib/types/models"
 
 import { COMPACT_REQUEST } from "~/lib/compact"
 import { setPluginRequestModel } from "~/lib/request-events"
+import { recordMessagesRequestedThinkingEffort } from "~/lib/upstream-model-log"
 import {
   getClaudeAutoModel,
   getSmallModel,
@@ -61,6 +62,7 @@ export const messagesFlowHandlers = {
 export async function handleCompletion(c: Context) {
   const anthropicPayload = await c.req.json<AnthropicMessagesPayload>()
   setPluginRequestModel(anthropicPayload.model)
+  recordMessagesRequestedThinkingEffort(anthropicPayload)
   anthropicPayload.model = fromClaudeDiscoveryModelId(anthropicPayload.model)
   applyClaudeNoToolsEffort(anthropicPayload, c.req.header("user-agent"))
 
@@ -105,8 +107,8 @@ export async function handleCompletionPayload(
   const claudeAutoModel = getClaudeAutoModel(true)
   const shouldUseClaudeAutoModel = Boolean(
     !dispatchOptions.skipClaudeAutoModel
-      && claudeAutoModel
-      && isClaudeAutoModelRequest(anthropicPayload),
+    && claudeAutoModel
+    && isClaudeAutoModelRequest(anthropicPayload),
   )
   if (claudeAutoModel && shouldUseClaudeAutoModel) {
     const resolvedClaudeAutoModel =

@@ -28,6 +28,7 @@ import {
 import { HTTPError } from "~/lib/error"
 import { setPluginRequestActualModel } from "~/lib/request-context"
 import { state } from "~/lib/state"
+import { logResponsesUpstreamModel } from "~/lib/upstream-model-log"
 import {
   createPooledWebSocketStream,
   createWebSocketUrl,
@@ -78,7 +79,7 @@ export const createResponses = async (
   // service_tier is not supported by github copilot
   payload.service_tier = undefined
 
-  consola.log(`<-- model: ${payload.model}`)
+  logResponsesUpstreamModel(payload)
 
   const effectiveTransport =
     compactType === COMPACT_REQUEST ? "http" : transport
