@@ -19,6 +19,7 @@ import { logCopilotRateLimits } from "~/lib/copilot-rate-limit"
 import { HTTPError } from "~/lib/error"
 import { setPluginRequestActualModel } from "~/lib/request-context"
 import { state } from "~/lib/state"
+import { logChatCompletionsUpstreamModel } from "~/lib/upstream-model-log"
 import { fetchUpstreamWithLifecycle } from "~/services/upstream-http"
 
 export const createChatCompletions = async (
@@ -64,7 +65,7 @@ export const createChatCompletions = async (
 
   prepareForCompact(headers, options.compactType)
 
-  consola.log(`<-- model: ${payload.model}`)
+  logChatCompletionsUpstreamModel(payload)
 
   const transportConfig = getUpstreamTransportConfig()
   setPluginRequestActualModel(payload.model)

@@ -4,6 +4,7 @@ import {
 } from "~/lib/config"
 import type { GoogleGenerateContentPayload } from "~/lib/types/google"
 import { setPluginRequestActualModel } from "~/lib/request-context"
+import { logGoogleUpstreamModel } from "~/lib/upstream-model-log"
 import { fetchUpstreamWithLifecycle } from "~/services/upstream-http"
 
 import {
@@ -29,6 +30,7 @@ export async function forwardGoogleGenerateContent(
   applyOpencodeSessionHeader(provider, headers, options.sessionId)
   headers.accept = options.stream ? "text/event-stream" : "application/json"
   const transport = getUpstreamTransportConfig()
+  logGoogleUpstreamModel(model, payload)
   setPluginRequestActualModel(model.replace(/^models\//u, ""))
   return await fetchUpstreamWithLifecycle(
     url,

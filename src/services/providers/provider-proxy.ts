@@ -1,4 +1,3 @@
-import consola from "consola"
 import { randomUUID } from "node:crypto"
 import {
   fetch as undiciFetch,
@@ -17,6 +16,11 @@ import {
   setPluginRequestActualModel,
 } from "~/lib/request-context"
 import { createTimeoutDispatcher } from "~/lib/timeout-dispatcher"
+import {
+  logChatCompletionsUpstreamModel,
+  logMessagesUpstreamModel,
+  logResponsesUpstreamModel,
+} from "~/lib/upstream-model-log"
 import type { AnthropicMessagesPayload } from "~/lib/types/anthropic"
 import type { ChatCompletionsPayload } from "~/lib/types/chat-completions"
 import type { ResponsesPayload } from "~/lib/types/responses"
@@ -213,7 +217,7 @@ export async function forwardProviderMessages(
   requestHeaders: Headers,
   options: { clientSignal?: AbortSignal } = {},
 ): Promise<Response> {
-  consola.log(`<-- model: ${payload.model}`)
+  logMessagesUpstreamModel(payload)
   const headers = buildProviderUpstreamHeaders(providerConfig, requestHeaders)
   applyOpencodeSessionHeader(
     providerConfig,
@@ -243,7 +247,7 @@ export async function forwardProviderChatCompletions(
   requestHeaders: Headers,
   options: { clientSignal?: AbortSignal } = {},
 ): Promise<Response> {
-  consola.log(`<-- model: ${payload.model}`)
+  logChatCompletionsUpstreamModel(payload)
   const headers = buildProviderUpstreamHeaders(providerConfig, requestHeaders)
   applyOpencodeSessionHeader(
     providerConfig,
@@ -273,7 +277,7 @@ export async function forwardProviderResponses(
   requestHeaders: Headers,
   options: { clientSignal?: AbortSignal } = {},
 ): Promise<Response> {
-  consola.log(`<-- model: ${payload.model}`)
+  logResponsesUpstreamModel(payload)
   const transportConfig = getUpstreamTransportConfig()
   const headers = buildProviderUpstreamHeaders(providerConfig, requestHeaders)
   applyOpencodeSessionHeader(

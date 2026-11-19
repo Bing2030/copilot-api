@@ -1,7 +1,8 @@
-import { describe, expect, test } from "bun:test"
+import { afterEach, describe, expect, mock, test } from "bun:test"
 
 import {
   type ClackPromptBackend,
+  prompt,
   promptWithClack,
   shouldUseClackPrompt,
 } from "~/lib/interactive-prompt"
@@ -18,11 +19,56 @@ function createBackend(
 }
 
 describe("interactive prompt compatibility", () => {
-  test("uses Clack only for an interactive Bun process on Windows", () => {
+  const streamPropertyRestoreTasks: Array<() => void> = []
+
+  function overrideStreamProperty(
+    target: object,
+    key: string,
+    value: unknown,
+  ): void {
+    const record = target as Record<string, unknown>
+    const descriptor = Object.getOwnPropertyDescriptor(record, key)
+    streamPropertyRestoreTasks.push(() => {
+      if (descriptor) {
+        Object.defineProperty(record, key, descriptor)
+      } else {
+        delete record[key]
+      }
+    })
+    Object.defineProperty(record, key, { value, configurable: true })
+  }
+
+  afterEach(() => {
+    while (streamPropertyRestoreTasks.length > 0) {
+      streamPropertyRestoreTasks.pop()?.()
+    }
+  })
+
+  test("routes prompts through the Clack backend under Bun", async () => {
+    // The test process is not interactive, so pretend it is.
+    overrideStreamProperty(process.stdin, "isTTY", true)
+    overrideStreamProperty(process.stdout, "isTTY", true)
+    overrideStreamProperty(process.stdout, "getColorDepth", (): number => 8)
+
+    await mock.module("@clack/prompts", () => ({
+      isCancel: () => false,
+      select: () => Promise.resolve("copilot"),
+      text: () => Promise.resolve("entered"),
+    }))
+
+    expect(
+      await prompt("Select a provider", {
+        type: "select",
+        options: ["copilot", "codex"],
+      }),
+    ).toBe("copilot")
+    expect(await prompt("Enter value", { type: "text" })).toBe("entered")
+  })
+
+  test("uses Clack for an interactive Bun process on any platform", () => {
     expect(
       shouldUseClackPrompt({
         bunVersion: "1.4.2",
-        platform: "win32",
         stdinIsTTY: true,
         stdoutIsTTY: true,
         stdoutIsTTYStream: true,
@@ -31,7 +77,6 @@ describe("interactive prompt compatibility", () => {
 
     expect(
       shouldUseClackPrompt({
-        platform: "win32",
         stdinIsTTY: true,
         stdoutIsTTY: true,
         stdoutIsTTYStream: true,
@@ -40,19 +85,17 @@ describe("interactive prompt compatibility", () => {
     expect(
       shouldUseClackPrompt({
         bunVersion: "1.4.2",
-        platform: "linux",
-        stdinIsTTY: true,
-        stdoutIsTTY: true,
-        stdoutIsTTYStream: true,
-      }),
-    ).toBe(false)
-    expect(
-      shouldUseClackPrompt({
-        bunVersion: "1.4.2",
-        platform: "win32",
         stdinIsTTY: false,
         stdoutIsTTY: true,
         stdoutIsTTYStream: true,
+      }),
+    ).toBe(false)
+    expect(
+      shouldUseClackPrompt({
+        bunVersion: "1.4.2",
+        stdinIsTTY: true,
+        stdoutIsTTY: true,
+        stdoutIsTTYStream: false,
       }),
     ).toBe(false)
   })

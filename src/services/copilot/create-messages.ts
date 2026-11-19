@@ -21,6 +21,7 @@ import { logCopilotRateLimits } from "~/lib/copilot-rate-limit"
 import { HTTPError } from "~/lib/error"
 import { setPluginRequestActualModel } from "~/lib/request-context"
 import { state } from "~/lib/state"
+import { logMessagesUpstreamModel } from "~/lib/upstream-model-log"
 import { parseUserIdMetadata } from "~/lib/utils"
 import { fetchUpstreamWithLifecycle } from "~/services/upstream-http"
 
@@ -136,7 +137,7 @@ export const createMessages = async (
     headers["anthropic-beta"] = anthropicBeta
   }
 
-  consola.log(`<-- model: ${payload.model}`)
+  logMessagesUpstreamModel(payload)
 
   const transportConfig = getUpstreamTransportConfig()
   setPluginRequestActualModel(payload.model)

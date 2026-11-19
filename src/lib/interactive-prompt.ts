@@ -42,29 +42,28 @@ export interface ClackPromptBackend {
 
 interface PromptRuntime {
   bunVersion?: string
-  platform: NodeJS.Platform
   stdinIsTTY?: boolean
   stdoutIsTTY?: boolean
   stdoutIsTTYStream?: boolean
 }
 
-// Consola 3.4.2 bundles a prompt implementation that writes keyboard input to
-// tty fd 0. Bun treats that as a real stdin write on Windows and throws EPIPE.
+// Consola 3.4.2 bundles a prompt implementation that renders through a
+// WriteStream on tty fd 0. Under Bun that stream misbehaves: it throws EPIPE
+// on Windows and stalls mid-render on macOS and Linux, leaving the prompt
+// invisible. Use the clack backend whenever the CLI runs under Bun.
 export function shouldUseClackPrompt(
   runtime: PromptRuntime = {
     bunVersion: process.versions.bun,
-    platform: process.platform,
     stdinIsTTY: process.stdin.isTTY,
     stdoutIsTTY: process.stdout.isTTY,
     stdoutIsTTYStream: typeof process.stdout.getColorDepth === "function",
   },
 ): boolean {
   return Boolean(
-    runtime.platform === "win32"
-      && runtime.bunVersion
-      && runtime.stdinIsTTY
-      && runtime.stdoutIsTTY
-      && runtime.stdoutIsTTYStream,
+    runtime.bunVersion
+    && runtime.stdinIsTTY
+    && runtime.stdoutIsTTY
+    && runtime.stdoutIsTTYStream,
   )
 }
 

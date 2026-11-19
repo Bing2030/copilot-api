@@ -17,6 +17,7 @@ export interface RequestContext {
   sessionAffinity: string | undefined
   rootSessionId?: string
   parentSessionId: string | undefined
+  requestedThinkingEffort?: string
   pluginRequest?: RequestEventObserver
   requestTiming?: RequestTiming
 }
@@ -35,6 +36,17 @@ export const requestContext = {
 // Observe the final target at upstream dispatch, after mapping and overrides.
 export function setPluginRequestActualModel(model: string): void {
   requestContext.getStore()?.pluginRequest?.setActualModel(model)
+}
+
+export function setRequestedThinkingEffort(effort: string | undefined): void {
+  const store = requestContext.getStore()
+  if (!store) return
+  const trimmed = effort?.trim()
+  store.requestedThinkingEffort = trimmed || undefined
+}
+
+export function getRequestedThinkingEffort(): string | undefined {
+  return requestContext.getStore()?.requestedThinkingEffort
 }
 
 export function generateTraceId(): string {

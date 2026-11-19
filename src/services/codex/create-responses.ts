@@ -36,6 +36,7 @@ import {
   requestContext,
   setPluginRequestActualModel,
 } from "~/lib/request-context"
+import { logResponsesUpstreamModel } from "~/lib/upstream-model-log"
 import consola from "consola"
 
 export const CODEX_API_BASE_URL = "https://chatgpt.com/backend-api"
@@ -305,7 +306,7 @@ export async function forwardCodexResponses(
     transport?: ResponsesTransport
   } = {},
 ): Promise<CreateResponsesReturn> {
-  consola.log(`<-- model: ${payload.model}`)
+  logResponsesUpstreamModel(payload)
   options.clientSignal?.throwIfAborted()
   setPluginRequestActualModel(payload.model)
   const transport = resolveCodexResponsesTransport(options.transport)
